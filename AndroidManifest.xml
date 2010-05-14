@@ -3,16 +3,18 @@
       package="ca.cineti.android"
       android:versionCode="1"
       android:versionName="1.0">
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
+    <application android:icon="@drawable/icon" android:label="@string/app_name" android:allowClearUserData="true" android:debuggable="true">
         <activity android:name=".Main"
-                  android:label="@string/app_name">
+                  android:label="@string/app_name" android:screenOrientation="portrait" android:alwaysRetainTaskState="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-    </application>
+    <activity android:name="Movies"></activity>
+<activity android:name="Theatres"></activity>
+</application>
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="7"/>
 
 </manifest> 

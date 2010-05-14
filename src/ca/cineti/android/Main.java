@@ -1,6 +1,7 @@
 package ca.cineti.android;
 
 import android.app.TabActivity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TabHost;
 
@@ -13,11 +14,17 @@ public class Main extends TabActivity {
         
         TabHost tabHost = getTabHost(); // The activity TabHost
         TabHost.TabSpec spec; // Reusable TabSpec for each tab
+        Intent intent; // Reusable Intent for each tab
         
-        // Initialise a TabSpec for each tab and add it to the TabHost.
-        spec = tabHost.newTabSpec("movies").setIndicator("Movies").setContent(R.id.txt1);
+        // Create an Intent to launch an Activity for the Movies tab.
+        intent = new Intent().setClass(this, Movies.class);
+        // Initialise a TabSpec for the Movies tab and add it to the TabHost.
+        spec = tabHost.newTabSpec("movies").setIndicator("Movies").setContent(intent);
         tabHost.addTab(spec);
-        spec = tabHost.newTabSpec("theatres").setIndicator("Theatres").setContent(R.id.txt2);
+        
+        // Do the same things for the Theatres tab.
+        intent = new Intent().setClass(this, Theatres.class);
+        spec = tabHost.newTabSpec("theatres").setIndicator("Theatres").setContent(intent);
         tabHost.addTab(spec);
         
         tabHost.setCurrentTab(0);
