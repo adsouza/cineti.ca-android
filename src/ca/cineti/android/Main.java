@@ -19,12 +19,12 @@ public class Main extends TabActivity {
         // Create an Intent to launch an Activity for the Movies tab.
         intent = new Intent().setClass(this, Movies.class);
         // Initialise a TabSpec for the Movies tab and add it to the TabHost.
-        spec = tabHost.newTabSpec("movies").setIndicator(getResources().getText(R.string.movies)).setContent(intent);
+        spec = tabHost.newTabSpec("movies").setIndicator(getString(R.string.movies)).setContent(intent);
         tabHost.addTab(spec);
         
         // Do the same things for the Theatres tab.
-        intent = new Intent().setClass(this, Theatres.class);
-        spec = tabHost.newTabSpec("cinemas").setIndicator(getResources().getText(R.string.cinemas)).setContent(intent);
+        intent = new Intent().setClass(this, Cinemas.class);
+        spec = tabHost.newTabSpec("cinemas").setIndicator(getString(R.string.cinemas)).setContent(intent);
         tabHost.addTab(spec);
         
         tabHost.setCurrentTab(0);

@@ -11,7 +11,7 @@
             </intent-filter>
         </activity>
     	<activity android:name="Movies"></activity>
-		<activity android:name="Theatres"></activity>
+		<activity android:name="Cinemas"></activity>
 	</application>
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="7"/>
 </manifest> 

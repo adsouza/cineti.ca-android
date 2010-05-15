@@ -7,7 +7,7 @@ import android.widget.TextView;
 /**
  *	Displays a brief list of local movie theatres.
  */
-public class Theatres extends Activity {
+public class Cinemas extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
