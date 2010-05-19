@@ -28,11 +28,53 @@ public class ImageAdapter extends BaseAdapter {
 	MovieData[] movies;
 	int mNumLoaded;
 	
-	private class RefreshTask extends BetterAsyncTask<Void, Void, Void>
+	private class ImgLoadTask extends BetterAsyncTask<JSONArray, Void, MovieData>
+	{
+
+		private int opposingIndex;
+		private JSONArray[] jsonMovies;
+
+		ImgLoadTask(Context ctx, int opposingIndex) {
+			super(ctx);
+			this.opposingIndex = opposingIndex;
+		}
+		
+		/* (non-Javadoc)
+         * @see com.github.droidfu.concurrent.BetterAsyncTask#doCheckedInBackground(android.content.Context, ParameterT[])
+         */
+        @Override
+        protected MovieData doCheckedInBackground(Context context, JSONArray... jsonMoviesData) throws Exception {
+			assert jsonMoviesData.length == 1;
+			this.jsonMovies = jsonMoviesData;
+			int pos = ImageAdapter.this.mNumLoaded + ImageAdapter.this.movies.length - (this.opposingIndex + 1);
+			return new MovieData(jsonMoviesData[0].getJSONObject(pos));
+        }
+
+		@Override
+		protected void after(Context ctx, MovieData film) {
+			if (film.thumbnail != null) {
+				ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = film;
+				ImageAdapter.this.mNumLoaded++;
+				new ImgLoadTask(this.getCallingContext(), this.opposingIndex).execute(this.jsonMovies);
+			} else {
+				ImageAdapter.this.movies[this.opposingIndex] = film;
+				new ImgLoadTask(this.getCallingContext(), this.opposingIndex - 1).execute(this.jsonMovies);
+			}
+			ImageAdapter.this.notifyDataSetChanged();
+		}
+
+		@Override
+		protected void handleError(Context ctx, Exception e) {
+			e.printStackTrace();
+		}
+	
+	}
+	
+	private class RefreshTask extends BetterAsyncTask<Void, Void, JSONArray>
 	{
 		private static final String MOVIES = "http://api.cineti.ca/movies.json";
 
-		public RefreshTask(Context ctx) {
+		RefreshTask(Context ctx) {
             super(ctx);
         }
 		
@@ -40,24 +82,8 @@ public class ImageAdapter extends BaseAdapter {
          * @see com.github.droidfu.concurrent.BetterAsyncTask#doCheckedInBackground(android.content.Context, ParameterT[])
          */
         @Override
-        protected Void doCheckedInBackground(Context context, Void... blah) throws Exception {
-    		JSONArray jsonMovies = new JSONArray(new DefaultHttpClient().execute(targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
-    		ImageAdapter.this.mNumLoaded = 0;
-			ImageAdapter.this.movies = new MovieData[jsonMovies.length()];
-			int opposingFinger = ImageAdapter.this.movies.length - 1;
-			int counter = 0;
-			while (ImageAdapter.this.mNumLoaded <= opposingFinger) {
-				MovieData movie = new MovieData(jsonMovies.getJSONObject(counter));
-				counter++;
-				if (movie.thumbnail != null) {
-					ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = movie;
-					ImageAdapter.this.mNumLoaded++;
-				} else {
-					ImageAdapter.this.movies[opposingFinger] = movie;
-					opposingFinger--;
-				}
-			}
-			return null;
+        protected JSONArray doCheckedInBackground(Context context, Void... blah) throws Exception {
+    		return new JSONArray(new DefaultHttpClient().execute(targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
         }
 
 		@Override
@@ -67,8 +93,10 @@ public class ImageAdapter extends BaseAdapter {
 		}
 
 		@Override
-		protected void after(Context ctx, Void blah) {
-			ImageAdapter.this.mOwner.refresh();
+		protected void after(Context ctx, JSONArray jsonMovies) {
+			ImageAdapter.this.mNumLoaded = 0;
+			ImageAdapter.this.movies = new MovieData[jsonMovies.length()];
+			new ImgLoadTask(this.getCallingContext(), ImageAdapter.this.movies.length - 1).execute(jsonMovies);
 		}
 	}
 	
@@ -97,16 +125,14 @@ public class ImageAdapter extends BaseAdapter {
 	 * @see android.widget.Adapter#getItem(int)
 	 */
 	public Object getItem(int position) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.movies[position];
 	}
 
 	/* (non-Javadoc)
 	 * @see android.widget.Adapter#getItemId(int)
 	 */
 	public long getItemId(int position) {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.movies[position].id;
 	}
 
 	/* (non-Javadoc)
