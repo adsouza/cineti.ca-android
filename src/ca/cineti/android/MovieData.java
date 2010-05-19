@@ -21,6 +21,11 @@ public class MovieData {
 	
 	public MovieData(JSONObject json) {
 		try {
+			// Parse out the movie's ID #
+			String spime = json.getJSONObject("@attributes").getString("href");
+			String idNum = spime.substring(spime.lastIndexOf('/') + 1);
+			this.id = Integer.parseInt(idNum);
+			// Fetch and store the title and thumbnail poster image
 			this.title = json.getJSONArray("@children").getJSONObject(0).getString("@text");
 			String url = json.getJSONArray("@children").getJSONObject(1).getJSONObject("@attributes").getString("href");
 			URL thumb = new URL(url);
