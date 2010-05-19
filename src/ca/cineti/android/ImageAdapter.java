@@ -55,10 +55,12 @@ public class ImageAdapter extends BaseAdapter {
 			if (film.thumbnail != null) {
 				ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = film;
 				ImageAdapter.this.mNumLoaded++;
-				new ImgLoadTask(this.getCallingContext(), this.opposingIndex).execute(this.jsonMovies);
 			} else {
 				ImageAdapter.this.movies[this.opposingIndex] = film;
-				new ImgLoadTask(this.getCallingContext(), this.opposingIndex - 1).execute(this.jsonMovies);
+				this.opposingIndex--;
+			}
+			if (ImageAdapter.this.mNumLoaded <= this.opposingIndex) {
+				new ImgLoadTask(this.getCallingContext(), this.opposingIndex).execute(this.jsonMovies);
 			}
 			ImageAdapter.this.notifyDataSetChanged();
 		}
