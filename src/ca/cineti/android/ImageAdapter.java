@@ -11,6 +11,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 
 import android.content.Context;
+import android.content.SharedPreferences.Editor;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
@@ -67,6 +68,15 @@ public class ImageAdapter extends BaseAdapter {
 			if (ImageAdapter.this.mNumLoaded <= this.opposingIndex) {
 				new ImgLoadTask(this.getCallingContext(), this.opposingIndex, this.losers).execute(this.jsonMovies);
 			} else {
+				// Save the current movie IDs and titles in cache for offline use.
+				Editor ed = ImageAdapter.this.mOwner.getSharedPreferences(TITLES, 0).edit();
+				ed.clear();
+				for (MovieData movie : ImageAdapter.this.movies) {
+					if (movie.thumbnail != null) {
+						ed.putString(Integer.toString(movie.id), movie.title);
+					}
+				}
+				ed.commit();
 				// delete image files for movies that are no longer playing
 				for (int id : this.losers) {
 					ctx.deleteFile(String.valueOf(id) + ".jpg");
