@@ -1,6 +1,8 @@
 package ca.cineti.android;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpGet;
@@ -33,10 +35,12 @@ public class ImageAdapter extends BaseAdapter {
 
 		private int opposingIndex;
 		private JSONArray[] jsonMovies;
+		private Set<Integer> losers;
 
-		ImgLoadTask(Context ctx, int opposingIndex) {
+		ImgLoadTask(Context ctx, int opposingIndex, Set<Integer> stale) {
 			super(ctx);
 			this.opposingIndex = opposingIndex;
+			this.losers = stale;
 		}
 		
 		/* (non-Javadoc)
@@ -47,7 +51,7 @@ public class ImageAdapter extends BaseAdapter {
 			assert jsonMoviesData.length == 1;
 			this.jsonMovies = jsonMoviesData;
 			int pos = ImageAdapter.this.mNumLoaded + ImageAdapter.this.movies.length - (this.opposingIndex + 1);
-			return new MovieData(jsonMoviesData[0].getJSONObject(pos));
+			return new MovieData(context, jsonMoviesData[0].getJSONObject(pos));
         }
 
 		@Override
@@ -55,12 +59,18 @@ public class ImageAdapter extends BaseAdapter {
 			if (film.thumbnail != null) {
 				ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = film;
 				ImageAdapter.this.mNumLoaded++;
+				this.losers.remove(film.id);
 			} else {
 				ImageAdapter.this.movies[this.opposingIndex] = film;
 				this.opposingIndex--;
 			}
 			if (ImageAdapter.this.mNumLoaded <= this.opposingIndex) {
-				new ImgLoadTask(this.getCallingContext(), this.opposingIndex).execute(this.jsonMovies);
+				new ImgLoadTask(this.getCallingContext(), this.opposingIndex, this.losers).execute(this.jsonMovies);
+			} else {
+				// delete image files for movies that are no longer playing
+				for (int id : this.losers) {
+					ctx.deleteFile(String.valueOf(id) + ".jpg");
+				}
 			}
 			ImageAdapter.this.notifyDataSetChanged();
 		}
@@ -85,7 +95,8 @@ public class ImageAdapter extends BaseAdapter {
          */
         @Override
         protected JSONArray doCheckedInBackground(Context context, Void... blah) throws Exception {
-    		return new JSONArray(new DefaultHttpClient().execute(targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
+        	JSONArray jsonMovies = new JSONArray(new DefaultHttpClient().execute(targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
+        	return jsonMovies;
         }
 
 		@Override
@@ -96,9 +107,15 @@ public class ImageAdapter extends BaseAdapter {
 
 		@Override
 		protected void after(Context ctx, JSONArray jsonMovies) {
+			// Save the IDs of the cached movies so their poster thumbnail image can be deleted later 
+			Set<Integer> losers = new HashSet<Integer>(ImageAdapter.this.movies.length);
+        	for (MovieData film : ImageAdapter.this.movies) {
+        		losers.add(film.id);
+        	}
+        	
 			ImageAdapter.this.mNumLoaded = 0;
 			ImageAdapter.this.movies = new MovieData[jsonMovies.length()];
-			new ImgLoadTask(this.getCallingContext(), ImageAdapter.this.movies.length - 1).execute(jsonMovies);
+			new ImgLoadTask(this.getCallingContext(), ImageAdapter.this.movies.length - 1, losers).execute(jsonMovies);
 		}
 	}
 	
@@ -109,9 +126,15 @@ public class ImageAdapter extends BaseAdapter {
         this.mOwner = owner;
         // Retrieve data from cache
         Map<String, ?> movieTitles = this.mOwner.getSharedPreferences(TITLES, 0).getAll();
-        this.mNumLoaded = movieTitles.size();
-        this.movies = new MovieData[this.mNumLoaded];
+        this.mNumLoaded = 0;
+        int movieCount = movieTitles.size();
+        this.movies = new MovieData[movieCount];
         // Initialise app with cached data
+        for (Map.Entry<String, ?> movieData : movieTitles.entrySet()) {
+        	this.movies[this.mNumLoaded] = new MovieData(this.mOwner, movieData);
+        	this.mNumLoaded++;
+        }
+        this.notifyDataSetChanged();
         // Refresh data from server
         new RefreshTask(this.mOwner.getApplicationContext()).execute();
     }
