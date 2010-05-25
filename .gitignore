@@ -1,2 +1,4 @@
-bin/*
-gen/*
+app/bin/*
+app/gen/*
+tests/bin/*
+tests/gen/*
