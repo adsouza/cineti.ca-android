@@ -89,4 +89,16 @@ public class MovieData {
 			e.printStackTrace();
 		}
 	}
+
+	public int getId() {
+		return id;
+	}
+
+	public Bitmap getThumbnail() {
+		return thumbnail;
+	}
+
+	public String getTitle() {
+		return title;
+	}
 }
