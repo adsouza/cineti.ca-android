@@ -1,11 +1,12 @@
 package ca.cineti.android.test;
 
-import junit.framework.TestCase;
 
-public class MovieDataTest extends TestCase {
+import android.test.AndroidTestCase;
 
-	public MovieDataTest(String name) {
-		super(name);
+public class MovieDataTest extends AndroidTestCase {
+
+	public MovieDataTest() {
+		super();
 	}
 
 	protected void setUp() throws Exception {
