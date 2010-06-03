@@ -1,12 +1,17 @@
 package ca.cineti.android;
 
+import org.apache.http.HttpHost;
+
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TabHost;
 
 public class Main extends TabActivity {
-    /** Called when the activity is first created. */
+    static final String PKG_NAME = Main.class.getPackage().getName();
+	static final HttpHost targetHost = new HttpHost("api.cineti.ca", 80, "http");
+
+	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

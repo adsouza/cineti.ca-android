@@ -4,13 +4,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.http.HttpHost;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONArray;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences.Editor;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,7 +25,6 @@ import com.github.droidfu.concurrent.BetterAsyncTask;
  * Provides image data for use in the Movies GridView.
  */
 public class ImageAdapter extends BaseAdapter {
-	static final HttpHost targetHost = new HttpHost("api.cineti.ca", 80, "http");
 	private static final String TITLES = "cached movie titles";
 	Movies mOwner;
 	MovieData[] movies;
@@ -105,23 +104,34 @@ public class ImageAdapter extends BaseAdapter {
          */
         @Override
         protected JSONArray doCheckedInBackground(Context context, Void... blah) throws Exception {
-        	JSONArray jsonMovies = new JSONArray(new DefaultHttpClient().execute(targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
-        	return jsonMovies;
+        	return new JSONArray(new DefaultHttpClient().execute(Main.targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
         }
 
 		@Override
 		protected void handleError(Context ctx, Exception e) {
 			// TODO: Log details and provide useful user feedback. 
 			e.printStackTrace();
+			// Retrieve data from cache
+	        Map<String, ?> movieTitles = ImageAdapter.this.mOwner.getSharedPreferences(TITLES, 0).getAll();
+	        ImageAdapter.this.mNumLoaded = 0;
+	        int movieCount = movieTitles.size();
+	        ImageAdapter.this.movies = new MovieData[movieCount];
+	        // Initialise app with cached data
+	        for (Map.Entry<String, ?> movieData : movieTitles.entrySet()) {
+	        	ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = new MovieData(ImageAdapter.this.mOwner, movieData);
+	        	ImageAdapter.this.mNumLoaded++;
+	        }
+			ImageAdapter.this.notifyDataSetChanged();
 		}
 
 		@Override
 		protected void after(Context ctx, JSONArray jsonMovies) {
-			// Save the IDs of the cached movies so their poster thumbnail image can be deleted later 
-			Set<Integer> losers = new HashSet<Integer>(ImageAdapter.this.movies.length);
-        	for (MovieData film : ImageAdapter.this.movies) {
-        		losers.add(film.id);
-        	}
+			// Save the IDs of the cached movies so their poster thumbnail image can be deleted later
+			Map<String, ?> movieTitles = ImageAdapter.this.mOwner.getSharedPreferences(TITLES, 0).getAll();
+			Set<Integer> losers = new HashSet<Integer>(movieTitles.size());
+	        for (String id : movieTitles.keySet()) {
+	        	losers.add(Integer.parseInt(id));
+	        }
         	
 			ImageAdapter.this.mNumLoaded = 0;
 			ImageAdapter.this.movies = new MovieData[jsonMovies.length()];
@@ -129,22 +139,37 @@ public class ImageAdapter extends BaseAdapter {
 		}
 	}
 	
+	private class MovieImageView extends ImageView {
+		int movieID;
+
+		MovieImageView(Context context, int movieID) {
+			super(context);
+			init(movieID);
+		}
+
+		/**
+		 * @param id
+		 */
+		void init(int id) {
+			this.movieID = id;
+			OnClickListener showMovieInfo = new OnClickListener() {
+				public void onClick(View v) {
+					MovieImageView selection = (MovieImageView)v;
+					Intent intentToWatch = new Intent(ImageAdapter.this.mOwner, Movie.class);
+					intentToWatch.putExtra(Movie.MOVIE_ID, selection.movieID);
+					ImageAdapter.this.mOwner.startActivity(intentToWatch);
+				}
+			};
+			this.setOnClickListener(showMovieInfo);
+		}
+		
+	}
+	
 	/**
 	 * Construct a new ImageAdapter.
 	 */
 	public ImageAdapter(Movies owner) {
         this.mOwner = owner;
-        // Retrieve data from cache
-        Map<String, ?> movieTitles = this.mOwner.getSharedPreferences(TITLES, 0).getAll();
-        this.mNumLoaded = 0;
-        int movieCount = movieTitles.size();
-        this.movies = new MovieData[movieCount];
-        // Initialise app with cached data
-        for (Map.Entry<String, ?> movieData : movieTitles.entrySet()) {
-        	this.movies[this.mNumLoaded] = new MovieData(this.mOwner, movieData);
-        	this.mNumLoaded++;
-        }
-        this.notifyDataSetChanged();
         // Refresh data from server
         new RefreshTask(this.mOwner.getApplicationContext()).execute();
     }
@@ -175,13 +200,14 @@ public class ImageAdapter extends BaseAdapter {
 	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
 	 */
 	public View getView(int position, View convertView, ViewGroup parent) {
-		ImageView imageView;
+		MovieImageView imageView;
         if (convertView == null) {  // if it's not recycled, initialise some attributes
-            imageView = new ImageView(this.mOwner);
+            imageView = new MovieImageView(this.mOwner, this.movies[position].id);
             imageView.setLayoutParams(new GridView.LayoutParams(95, 140));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         } else {
-            imageView = (ImageView) convertView;
+            imageView = (MovieImageView) convertView;
+            imageView.init(this.movies[position].id);
         }
 		imageView.setImageBitmap(this.movies[position].thumbnail);
         return imageView;
