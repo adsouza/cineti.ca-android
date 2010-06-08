@@ -56,10 +56,10 @@ public class ImageAdapter extends BaseAdapter {
 
 		@Override
 		protected void after(Context ctx, MovieData film) {
-			if (film.thumbnail != null) {
+			if (film.getThumbnail() != null) {
 				ImageAdapter.this.movies[ImageAdapter.this.mNumLoaded] = film;
 				ImageAdapter.this.mNumLoaded++;
-				this.losers.remove(film.id);
+				this.losers.remove(film.getId());
 			} else {
 				ImageAdapter.this.movies[this.opposingIndex] = film;
 				this.opposingIndex--;
@@ -71,8 +71,8 @@ public class ImageAdapter extends BaseAdapter {
 				Editor ed = ImageAdapter.this.mOwner.getSharedPreferences(TITLES, 0).edit();
 				ed.clear();
 				for (MovieData movie : ImageAdapter.this.movies) {
-					if (movie.thumbnail != null) {
-						ed.putString(Integer.toString(movie.id), movie.title);
+					if (movie.getThumbnail() != null) {
+						ed.putString(Integer.toString(movie.getId()), movie.getTitle());
 					}
 				}
 				ed.commit();
@@ -192,7 +192,7 @@ public class ImageAdapter extends BaseAdapter {
 	 * @see android.widget.Adapter#getItemId(int)
 	 */
 	public long getItemId(int position) {
-		return this.movies[position].id;
+		return this.movies[position].getId();
 	}
 
 	/* (non-Javadoc)
@@ -202,14 +202,14 @@ public class ImageAdapter extends BaseAdapter {
 	public View getView(int position, View convertView, ViewGroup parent) {
 		MovieImageView imageView;
         if (convertView == null) {  // if it's not recycled, initialise some attributes
-            imageView = new MovieImageView(this.mOwner, this.movies[position].id);
+            imageView = new MovieImageView(this.mOwner, this.movies[position].getId());
             imageView.setLayoutParams(new GridView.LayoutParams(95, 140));
             imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
         } else {
             imageView = (MovieImageView) convertView;
-            imageView.init(this.movies[position].id);
+            imageView.init(this.movies[position].getId());
         }
-		imageView.setImageBitmap(this.movies[position].thumbnail);
+		imageView.setImageBitmap(this.movies[position].getThumbnail());
         return imageView;
 	}
 

@@ -11,8 +11,6 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.Map.Entry;
 
 import org.json.JSONArray;
@@ -23,33 +21,87 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.format.Time;
+import android.util.Log;
 
 enum Cinema {
-	AMC, Scotia, Beaubien, Parc, Latin;
+	AMC("AMC Forum 22"), 
+	Scotia("Banque Scotia (Paramount)"), 
+	Beaubien("Cinema Beaubien"), 
+	Parc("Cinema du Parc"), 
+	Latin("Quartier Latin");
+	
+	private static Cinema[] array = { AMC, Scotia,  Beaubien, Parc, Latin };
+	
+	private String fullName;
+	
+	private Cinema(String longForm) {
+		this.fullName = longForm;
+	}
+	
+	public String toString() {
+		return this.fullName;
+	}
+	
+	static Cinema parseString(String ascii) throws Exception {
+		for (Cinema c : array) {
+			if (c.fullName.equals(ascii)) {
+				return c;
+			}
+		}
+		throw new Exception("Unrecognized cinema name: " + ascii);
+	}
 }
 
 /**
  * Encapsulates all the metadata about a movie.
  */
 public class MovieData {
-	int id; // 5 digit ID number used by Cineti.ca
-	Bitmap thumbnail;
-	String title;
-	String synopsis;
-	private SortedSet<Map<Cinema, List<Time>>> showings;
+	static final String EXT_JPEG = ".jpg";
+	
+	private int id; // 5 digit ID number used by Cineti.ca
+	private Bitmap thumbnail;
+	private String title;
+	private String synopsis;
+	private List<Map<Cinema, List<Time>>> showings;
+	private String genre;
 	
 	public MovieData(Context ctx, int id, JSONObject json) {
 		this.id = id;
 		try {
 			this.title = json.getString("title");
+			this.genre = json.getString("genre");
 			this.synopsis = json.getString("plot");
-			this.showings = new TreeSet<Map<Cinema, List<Time>>>();
+			this.showings = new LinkedList<Map<Cinema, List<Time>>>();
 			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
 			this.showings.add(today);
-			Cinema cinema = Cinema.AMC;
-			List<Time> showTimes = new LinkedList<Time>();
-			today.put(cinema, showTimes );
-			String filename = Integer.toString(id) + ".jpg";
+			// Parse the cinema name and screening times
+			JSONArray cinemas = json.getJSONArray("theaters");
+			for (int i = 0; i < cinemas.length(); i++) {
+				JSONObject cinemaDetails = cinemas.getJSONObject(i);
+				String cinemaName = cinemaDetails.getString("name");
+				try {
+					Cinema cinema = Cinema.parseString(cinemaName);
+					List<Time> showTimes = new LinkedList<Time>();
+					JSONArray times = cinemaDetails.getJSONArray("times");
+					if (times.length() == 0) {
+						Log.e("Cineti", "No times could be extracted from the JSON data: " + cinemaDetails);
+						continue;
+					}
+					String date = cinemaDetails.getString("date");
+					for (int j = 0; j < times.length(); j++) {
+						String showTime = times.getString(j);
+						Time screening = new Time();
+						screening.parse3339(date + 'T' + showTime);
+						showTimes.add(screening);
+					}
+					today.put(cinema, showTimes);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+			String filename = Integer.toString(id) + EXT_JPEG;
 			try {
 				InputStream in = ctx.openFileInput(filename);
 				this.thumbnail = BitmapFactory.decodeStream(in);
@@ -83,7 +135,7 @@ public class MovieData {
 			// Fetch the title and thumbnail poster image
 			this.title = json.getString("title");
 			InputStream in;
-			String filename = idNum + ".jpg";
+			String filename = idNum + EXT_JPEG;
 			try {
 				in = ctx.openFileInput(filename);
 			} catch (FileNotFoundException e) {
@@ -135,7 +187,7 @@ public class MovieData {
 	MovieData(Context ctx, Entry<String, ?> movieData) {
 		this.id = Integer.parseInt(movieData.getKey());
 		this.title = (String)movieData.getValue();
-		String filename = movieData.getKey() + ".jpg";
+		String filename = movieData.getKey() + EXT_JPEG;
 		try {
 			InputStream in = ctx.openFileInput(filename);
 			this.thumbnail = BitmapFactory.decodeStream(in);
@@ -155,5 +207,26 @@ public class MovieData {
 
 	public String getTitle() {
 		return this.title;
+	}
+
+	/**
+	 * @return the genre
+	 */
+	public String getGenre() {
+		return this.genre;
+	}
+
+	/**
+	 * @return the synopsis
+	 */
+	public String getSynopsis() {
+		return this.synopsis;
+	}
+
+	/**
+	 * @return the showings
+	 */
+	public List<Map<Cinema, List<Time>>> getShowings() {
+		return this.showings;
 	}
 }
