@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-  xmlns:android="http://schemas.android.com/apk/res/android"
-  android:orientation="vertical" android:layout_height="fill_parent" android:layout_width="fill_parent" android:padding="10sp">
-<TextView android:text="Action/Comedy" android:layout_height="wrap_content" android:layout_width="fill_parent" android:id="@+id/genre"></TextView>
-<TextView android:text="Jurassic Park 5" android:layout_height="wrap_content" android:layout_width="fill_parent" android:id="@+id/title" android:textStyle="bold" android:textSize="36sp"></TextView>
-<TextView android:text="In the harsh terrain of the Mexican desert, a mortally wounded man is left for dead in the heat of the desert sun. This is J. Once a street smart, carefree young guy. Now, a wanted man. The only thing that keeps him alive is the quest to find the love of his life, Natasha. A woman, engaged to another man, but surely destined for J. A woman who comes into his life like a bolt of ligtning and changes it forever. KITES is a story of love that goes beyond barriers, boundaries and cultures. It is a story of passion that defies every rule, of a relationship that takes two lovers on a thrilling journey filled with precious moments- and unexpected betrayal." 
-	android:id="@+id/synopsis" android:layout_height="wrap_content" android:layout_width="fill_parent" android:minLines="3"></TextView>
-<ExpandableListView android:id="@+id/showings" android:layout_height="fill_parent" android:layout_width="fill_parent"></ExpandableListView>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+	android:orientation="vertical" android:layout_height="fill_parent" android:layout_width="fill_parent" android:padding="10sp">
+	<TextView android:layout_height="wrap_content" android:layout_width="fill_parent" android:id="@+id/genre"></TextView>
+	<TextView android:text="Please wait" android:layout_height="wrap_content" android:layout_width="fill_parent" android:id="@+id/title" android:textStyle="bold" android:textSize="36sp"></TextView>
+	<ScrollView android:layout_height="wrap_content" android:layout_width="fill_parent" android:layout_marginBottom="140dip">
+		<TextView android:text="Your movie info is being downloaded..." android:id="@+id/synopsis" android:layout_height="wrap_content" android:layout_width="fill_parent" android:minLines="3"></TextView>
+	</ScrollView>
+	<ExpandableListView android:id="@+id/showings" android:layout_marginTop="-140dip" android:layout_height="fill_parent" android:layout_width="fill_parent"></ExpandableListView>
 </LinearLayout>
