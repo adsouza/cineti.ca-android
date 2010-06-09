@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -228,5 +229,21 @@ public class MovieData {
 	 */
 	public List<Map<Cinema, List<Time>>> getShowings() {
 		return this.showings;
+	}
+
+	public List<Map<String, String>> formatScreenings(int dayIndex) {
+		List<Map<String, String>> cinemas = new LinkedList<Map<String, String>>();
+		Map<Cinema, List<Time>> screeningsToday = this.getShowings().get(dayIndex);
+		for (Map.Entry<Cinema, List<Time>> c : screeningsToday.entrySet()) {
+			Map<String, String> deets = new HashMap<String, String>();
+			StringBuffer times = new StringBuffer();
+			for (Time t : c.getValue()) {
+				times.append(t.format("%l:%M%p "));
+			}
+			deets.put(Movie.FetchTask.CINEMA_NAME, c.getKey().toString() + ": ");
+			deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+			cinemas.add(deets);
+		}
+		return cinemas;
 	}
 }

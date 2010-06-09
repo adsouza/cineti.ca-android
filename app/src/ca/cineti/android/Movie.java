@@ -2,7 +2,6 @@ package ca.cineti.android;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +13,6 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.text.format.Time;
 import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
@@ -28,13 +26,15 @@ public class Movie extends Activity {
 
 	static final String MOVIE_ID = Main.PKG_NAME + ".movieID";
 	
-	private class FetchTask extends BetterAsyncTask<Void, Void, JSONObject>
+	class FetchTask extends BetterAsyncTask<Void, Void, JSONObject>
 	{
 		private static final String DAY = "day";
-		private static final String SHOW_TIMES = "showTimes";
-		private static final String CINEMA_NAME = "cinemaName";
 		private static final String MOVIE = "http://api.cineti.ca/movie/";
 		private int id;
+		
+		static final String SHOW_TIMES = "showTimes";
+		static final String CINEMA_NAME = "cinemaName";
+		
 		FetchTask(Context ctx, int id) {
             super(ctx);
             this.id = id;
@@ -71,18 +71,7 @@ public class Movie extends Activity {
 			day.put(DAY, "today");
 			headerData.add(day);
 			final List<List<Map<String, String>>> contentData = new ArrayList<List<Map<String, String>>>();
-			List<Map<String, String>> cinemas = new LinkedList<Map<String, String>>();
-			Map<Cinema, List<Time>> screeningsToday = data.getShowings().get(0);
-			for (Map.Entry<Cinema, List<Time>> c : screeningsToday.entrySet()) {
-				Map<String, String> deets = new HashMap<String, String>();
-				StringBuffer times = new StringBuffer();
-				for (Time t : c.getValue()) {
-					times.append(t.format("%l:%M%p "));
-				}
-				deets.put(CINEMA_NAME, c.getKey().toString() + ": ");
-				deets.put(SHOW_TIMES, times.toString());
-				cinemas.add(deets);
-			}
+			List<Map<String, String>> cinemas = data.formatScreenings(0);
 			contentData.add(cinemas);
 			SimpleExpandableListAdapter expListAdapter = new SimpleExpandableListAdapter(Movie.this, 
 																						 headerData, 
