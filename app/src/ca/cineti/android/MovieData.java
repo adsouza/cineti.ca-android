@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,6 +21,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.text.format.Time;
@@ -57,7 +61,12 @@ enum Cinema {
  * Encapsulates all the metadata about a movie.
  */
 public class MovieData {
+	private static final String TITLE = "title";
+	private static final String SYNOPSIS = "synopsis";
+	private static final String GENRE = "genre";
+
 	static final String EXT_JPEG = ".jpg";
+
 	
 	private int id; // 5 digit ID number used by Cineti.ca
 	private Bitmap thumbnail;
@@ -70,7 +79,7 @@ public class MovieData {
 		this.id = id;
 		try {
 			this.title = json.getString("title");
-			this.genre = json.getString("genre");
+			this.genre = json.getString(GENRE);
 			this.synopsis = json.getString("plot");
 			this.showings = new LinkedList<Map<Cinema, List<Time>>>();
 			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
@@ -230,10 +239,52 @@ public class MovieData {
 	public List<Map<Cinema, List<Time>>> getShowings() {
 		return this.showings;
 	}
+	
+	/**
+	 * Caches the metadata in local storage for later retrieval while offline.
+	 * @param ctx App context to use for storing data.
+	 */
+	public void persist(Context ctx) {
+		Editor ed = ctx.getSharedPreferences(Integer.toString(this.id), 0).edit();
+		ed.putString(TITLE, title);
+		ed.putString(GENRE, genre);
+		ed.putString(SYNOPSIS, synopsis);
+		String today = new SimpleDateFormat("E").format(new Date());
+		List<Map<String, String>> screenings = this.formatScreenings(0);
+		for (Map<String, String> showTimes : screenings) {
+			ed.putString(today + '@' + showTimes.get(Movie.FetchTask.CINEMA_NAME), 
+						 showTimes.get(Movie.FetchTask.SHOW_TIMES));
+		}
+		ed.commit();
+	}
 
+	/**
+	 * Instantiates a MovieData object for a specific movie using cached data.
+	 * @param ctx App context
+	 * @param id Movie ID number
+	 */
+	public MovieData(Context ctx, int id) {
+		this.id = id;
+		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(id), 0);
+	    // Retrieve cached data
+		this.genre = cachedData.getString(GENRE, "generic");
+		this.title = cachedData.getString(TITLE, "Untitled");
+		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
+		this.showings = new LinkedList<Map<Cinema, List<Time>>>();
+	}
+
+	/**
+	 * Produces a mapping from cinema names to strings containing a list of showtimes at those cinemas for a given day. 
+	 * @param dayIndex Used to specify the day for which showtimes are wanted, with 0 being the current day, 1 being the next day, etc.
+	 * @return The list of cinema->showtimes mappings.
+	 */
 	public List<Map<String, String>> formatScreenings(int dayIndex) {
 		List<Map<String, String>> cinemas = new LinkedList<Map<String, String>>();
-		Map<Cinema, List<Time>> screeningsToday = this.getShowings().get(dayIndex);
+		if (dayIndex >= this.showings.size()) {
+			Log.e("Cinetica", "Attempt to retrieve info about screenings for day about which no screening info is available.");
+			return cinemas;
+		}
+		Map<Cinema, List<Time>> screeningsToday = this.showings.get(dayIndex);
 		for (Map.Entry<Cinema, List<Time>> c : screeningsToday.entrySet()) {
 			Map<String, String> deets = new HashMap<String, String>();
 			StringBuffer times = new StringBuffer();

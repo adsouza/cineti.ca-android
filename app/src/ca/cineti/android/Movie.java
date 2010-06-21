@@ -20,7 +20,7 @@ import android.widget.TextView;
 import com.github.droidfu.concurrent.BetterAsyncTask;
 
 /**
- *
+ * Displays info about a movie.
  */
 public class Movie extends Activity {
 
@@ -54,12 +54,23 @@ public class Movie extends Activity {
 		protected void handleError(Context ctx, Exception e) {
 			// TODO: Log details and provide useful user feedback. 
 			e.printStackTrace();
+			MovieData data = new MovieData(ctx, this.id);
+			displayInfo(data);
 		}
 
 		@Override
 		protected void after(Context ctx, JSONObject jsonMovie) {
-			ExpandableListView elv = (ExpandableListView) findViewById(R.id.showings);
 			MovieData data = new MovieData(ctx, this.id, jsonMovie);
+			displayInfo(data);
+			data.persist(ctx);
+		}
+
+		/**
+		 * Display info about the movie to the user.
+		 * @param data Metadata about the movie.
+		 */
+		private void displayInfo(MovieData data) {
+			ExpandableListView elv = (ExpandableListView) findViewById(R.id.showings);
 			TextView title = (TextView) findViewById(R.id.title);
 			title.setText(data.getTitle());
 			TextView genre = (TextView) findViewById(R.id.genre);
