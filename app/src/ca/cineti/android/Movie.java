@@ -82,7 +82,7 @@ public class Movie extends Activity {
 			day.put(DAY, "today");
 			headerData.add(day);
 			final List<List<Map<String, String>>> contentData = new ArrayList<List<Map<String, String>>>();
-			List<Map<String, String>> cinemas = data.formatScreenings(0);
+			List<Map<String, String>> cinemas = data.getScreenings();
 			contentData.add(cinemas);
 			SimpleExpandableListAdapter expListAdapter = new SimpleExpandableListAdapter(Movie.this, 
 																						 headerData, 

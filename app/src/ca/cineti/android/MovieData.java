@@ -8,8 +8,10 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +37,7 @@ enum Cinema {
 	Parc("Cinema du Parc"), 
 	Latin("Quartier Latin");
 	
-	private static Cinema[] array = { AMC, Scotia,  Beaubien, Parc, Latin };
+	static Cinema[] array = { AMC, Scotia,  Beaubien, Parc, Latin };
 	
 	private String fullName;
 	
@@ -72,8 +74,9 @@ public class MovieData {
 	private Bitmap thumbnail;
 	private String title;
 	private String synopsis;
-	private List<Map<Cinema, List<Time>>> showings;
 	private String genre;
+	// Maps from a date string in yyyy-mm-dd format to a list of theatres & showtimes.
+	private Map<String, List<Map<String, String>>> showings;
 	
 	public MovieData(Context ctx, int id, JSONObject json) {
 		this.id = id;
@@ -81,9 +84,7 @@ public class MovieData {
 			this.title = json.getString("title");
 			this.genre = json.getString(GENRE);
 			this.synopsis = json.getString("plot");
-			this.showings = new LinkedList<Map<Cinema, List<Time>>>();
 			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
-			this.showings.add(today);
 			// Parse the cinema name and screening times
 			JSONArray cinemas = json.getJSONArray("theaters");
 			for (int i = 0; i < cinemas.length(); i++) {
@@ -110,6 +111,22 @@ public class MovieData {
 					e.printStackTrace();
 				}
 			}
+			// Format and store the screening times as strings
+			this.showings = new HashMap<String, List<Map<String, String>>>();
+			List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
+			for (Map.Entry<Cinema, List<Time>> c : today.entrySet()) {
+				Map<String, String> deets = new HashMap<String, String>();
+				StringBuffer times = new StringBuffer();
+				for (Time t : c.getValue()) {
+					times.append(t.format("%l:%M%p "));
+				}
+				deets.put(Movie.FetchTask.CINEMA_NAME, c.getKey().toString() + ": ");
+				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+				screenings.add(deets);
+			}
+			Time currentDay = new Time();
+			currentDay.setToNow();
+			this.showings.put(currentDay.format("%Y-%m-%d"), screenings);
 			
 			String filename = Integer.toString(id) + EXT_JPEG;
 			try {
@@ -234,13 +251,6 @@ public class MovieData {
 	}
 
 	/**
-	 * @return the showings
-	 */
-	public List<Map<Cinema, List<Time>>> getShowings() {
-		return this.showings;
-	}
-	
-	/**
 	 * Caches the metadata in local storage for later retrieval while offline.
 	 * @param ctx App context to use for storing data.
 	 */
@@ -250,8 +260,9 @@ public class MovieData {
 		ed.putString(GENRE, genre);
 		ed.putString(SYNOPSIS, synopsis);
 		String today = new SimpleDateFormat("E").format(new Date());
-		List<Map<String, String>> screenings = this.formatScreenings(0);
-		for (Map<String, String> showTimes : screenings) {
+		Time currentDay = new Time();
+		currentDay.setToNow();
+		for (Map<String, String> showTimes : this.showings.get(currentDay.format("%Y-%m-%d"))) {
 			ed.putString(today + '@' + showTimes.get(Movie.FetchTask.CINEMA_NAME), 
 						 showTimes.get(Movie.FetchTask.SHOW_TIMES));
 		}
@@ -270,31 +281,18 @@ public class MovieData {
 		this.genre = cachedData.getString(GENRE, "generic");
 		this.title = cachedData.getString(TITLE, "Untitled");
 		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
-		this.showings = new LinkedList<Map<Cinema, List<Time>>>();
+		
+		this.showings = new HashMap<String, List<Map<String, String>>>();
+		LinkedList<Map<String, String>> today = new LinkedList<Map<String, String>>();
+		Time currentDay = new Time();
+		currentDay.setToNow();
+		this.showings.put(currentDay.format("%Y-%m-%d"), today);
+		
 	}
 
-	/**
-	 * Produces a mapping from cinema names to strings containing a list of showtimes at those cinemas for a given day. 
-	 * @param dayIndex Used to specify the day for which showtimes are wanted, with 0 being the current day, 1 being the next day, etc.
-	 * @return The list of cinema->showtimes mappings.
-	 */
-	public List<Map<String, String>> formatScreenings(int dayIndex) {
-		List<Map<String, String>> cinemas = new LinkedList<Map<String, String>>();
-		if (dayIndex >= this.showings.size()) {
-			Log.e("Cinetica", "Attempt to retrieve info about screenings for day about which no screening info is available.");
-			return cinemas;
-		}
-		Map<Cinema, List<Time>> screeningsToday = this.showings.get(dayIndex);
-		for (Map.Entry<Cinema, List<Time>> c : screeningsToday.entrySet()) {
-			Map<String, String> deets = new HashMap<String, String>();
-			StringBuffer times = new StringBuffer();
-			for (Time t : c.getValue()) {
-				times.append(t.format("%l:%M%p "));
-			}
-			deets.put(Movie.FetchTask.CINEMA_NAME, c.getKey().toString() + ": ");
-			deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
-			cinemas.add(deets);
-		}
-		return cinemas;
+	public List<Map<String, String>> getScreenings() {
+		Time currentDay = new Time();
+		currentDay.setToNow();
+		return this.showings.get(currentDay.format("%Y-%m-%d"));
 	}
 }
