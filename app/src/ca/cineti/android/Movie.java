@@ -94,6 +94,7 @@ public class Movie extends Activity {
 																						 new String[] { CINEMA_NAME, SHOW_TIMES }, 
 																						 new int[] { R.id.cinemaName, R.id.showTimes });
 			elv.setAdapter(expListAdapter);
+			elv.expandGroup(0);
 		}
 	}
 

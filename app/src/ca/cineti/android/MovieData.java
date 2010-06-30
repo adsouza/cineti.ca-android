@@ -8,10 +8,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumMap;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,9 +122,7 @@ public class MovieData {
 				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
 				screenings.add(deets);
 			}
-			Time currentDay = new Time();
-			currentDay.setToNow();
-			this.showings.put(currentDay.format("%Y-%m-%d"), screenings);
+			this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
 			
 			String filename = Integer.toString(id) + EXT_JPEG;
 			try {
@@ -260,10 +256,9 @@ public class MovieData {
 		ed.putString(GENRE, genre);
 		ed.putString(SYNOPSIS, synopsis);
 		String today = new SimpleDateFormat("E").format(new Date());
-		Time currentDay = new Time();
-		currentDay.setToNow();
-		for (Map<String, String> showTimes : this.showings.get(currentDay.format("%Y-%m-%d"))) {
-			ed.putString(today + '@' + showTimes.get(Movie.FetchTask.CINEMA_NAME), 
+		for (Map<String, String> showTimes : this.showings.get(today)) {
+			String cinemaName = showTimes.get(Movie.FetchTask.CINEMA_NAME);
+			ed.putString(today + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
 						 showTimes.get(Movie.FetchTask.SHOW_TIMES));
 		}
 		ed.commit();
@@ -281,18 +276,22 @@ public class MovieData {
 		this.genre = cachedData.getString(GENRE, "generic");
 		this.title = cachedData.getString(TITLE, "Untitled");
 		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
-		
 		this.showings = new HashMap<String, List<Map<String, String>>>();
-		LinkedList<Map<String, String>> today = new LinkedList<Map<String, String>>();
-		Time currentDay = new Time();
-		currentDay.setToNow();
-		this.showings.put(currentDay.format("%Y-%m-%d"), today);
-		
+		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
+		String currentDay = new SimpleDateFormat("E").format(new Date());
+		for (Cinema cinema : Cinema.array) {
+			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
+			if (showTimes.length() > 0) {
+				Map<String, String> deets = new HashMap<String, String>();
+				deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
+				deets.put(Movie.FetchTask.SHOW_TIMES, showTimes);
+				today.add(deets);
+			}
+		}
+		this.showings.put(currentDay, today);
 	}
 
 	public List<Map<String, String>> getScreenings() {
-		Time currentDay = new Time();
-		currentDay.setToNow();
-		return this.showings.get(currentDay.format("%Y-%m-%d"));
+		return this.showings.get(new SimpleDateFormat("E").format(new Date()));
 	}
 }
