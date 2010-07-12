@@ -104,7 +104,9 @@ public class ImageAdapter extends BaseAdapter {
          */
         @Override
         protected JSONArray doCheckedInBackground(Context context, Void... blah) throws Exception {
-        	return new JSONArray(new DefaultHttpClient().execute(Main.targetHost, new HttpGet(MOVIES), new BasicResponseHandler()));
+        	return new JSONArray(new DefaultHttpClient().execute(Main.targetHost, 
+        														new HttpGet(MOVIES), 
+        														new BasicResponseHandler()));
         }
 
 		@Override

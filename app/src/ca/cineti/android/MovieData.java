@@ -28,35 +28,6 @@ import android.graphics.BitmapFactory;
 import android.text.format.Time;
 import android.util.Log;
 
-enum Cinema {
-	AMC("AMC Forum 22"), 
-	Scotia("Banque Scotia (Paramount)"), 
-	Beaubien("Cinema Beaubien"), 
-	Parc("Cinema du Parc"), 
-	Latin("Quartier Latin");
-	
-	static Cinema[] array = { AMC, Scotia,  Beaubien, Parc, Latin };
-	
-	private String fullName;
-	
-	private Cinema(String longForm) {
-		this.fullName = longForm;
-	}
-	
-	public String toString() {
-		return this.fullName;
-	}
-	
-	static Cinema parseString(String ascii) throws Exception {
-		for (Cinema c : array) {
-			if (c.fullName.equals(ascii)) {
-				return c;
-			}
-		}
-		throw new Exception("Unrecognized cinema name: " + ascii);
-	}
-}
-
 /**
  * Encapsulates all the metadata about a movie.
  */
@@ -82,14 +53,14 @@ public class MovieData {
 			this.title = json.getString("title");
 			this.genre = json.getString(GENRE);
 			this.synopsis = json.getString("plot");
-			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
+			Map<CinemaData, List<Time>> today = new EnumMap<CinemaData, List<Time>>(CinemaData.class);
 			// Parse the cinema name and screening times
 			JSONArray cinemas = json.getJSONArray("theaters");
 			for (int i = 0; i < cinemas.length(); i++) {
 				JSONObject cinemaDetails = cinemas.getJSONObject(i);
 				String cinemaName = cinemaDetails.getString("name");
 				try {
-					Cinema cinema = Cinema.parseString(cinemaName);
+					CinemaData cinema = CinemaData.parseString(cinemaName);
 					List<Time> showTimes = new LinkedList<Time>();
 					JSONArray times = cinemaDetails.getJSONArray("times");
 					if (times.length() == 0) {
@@ -112,7 +83,7 @@ public class MovieData {
 			// Format and store the screening times as strings
 			this.showings = new HashMap<String, List<Map<String, String>>>();
 			List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
-			for (Map.Entry<Cinema, List<Time>> c : today.entrySet()) {
+			for (Map.Entry<CinemaData, List<Time>> c : today.entrySet()) {
 				Map<String, String> deets = new HashMap<String, String>();
 				StringBuffer times = new StringBuffer();
 				for (Time t : c.getValue()) {
@@ -279,7 +250,7 @@ public class MovieData {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
 		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
 		String currentDay = new SimpleDateFormat("E").format(new Date());
-		for (Cinema cinema : Cinema.array) {
+		for (CinemaData cinema : CinemaData.array) {
 			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
 			if (showTimes.length() > 0) {
 				Map<String, String> deets = new HashMap<String, String>();

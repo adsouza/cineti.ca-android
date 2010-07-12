@@ -84,15 +84,16 @@ public class Movie extends Activity {
 			final List<List<Map<String, String>>> contentData = new ArrayList<List<Map<String, String>>>();
 			List<Map<String, String>> cinemas = data.getScreenings();
 			contentData.add(cinemas);
-			SimpleExpandableListAdapter expListAdapter = new SimpleExpandableListAdapter(Movie.this, 
-																						 headerData, 
-																						 android.R.layout.simple_expandable_list_item_1, 
-																						 new String[] { DAY }, 
-																						 new int[] {android.R.id.text1}, 
-																						 contentData, 
-																						 R.layout.daily_showings, 
-																						 new String[] { CINEMA_NAME, SHOW_TIMES }, 
-																						 new int[] { R.id.cinemaName, R.id.showTimes });
+			SimpleExpandableListAdapter expListAdapter = 
+				new SimpleExpandableListAdapter(Movie.this, 
+												 headerData, 
+												 android.R.layout.simple_expandable_list_item_1, 
+												 new String[] { DAY }, 
+												 new int[] {android.R.id.text1}, 
+												 contentData, 
+												 R.layout.daily_showings, 
+												 new String[] { CINEMA_NAME, SHOW_TIMES }, 
+												 new int[] { R.id.cinemaName, R.id.showTimes });
 			elv.setAdapter(expListAdapter);
 			elv.expandGroup(0);
 		}

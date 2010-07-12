@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<string-array name="cinemaNames">
+	<item>AMC Forum 22</item>
+	<item>Banque Scotia (Paramount)</item>
+	<item>Cinema Beaubien</item>
+	<item>Cinema du Parc</item>
+	<item>Quartier Latin</item>
+</string-array>
+</resources>

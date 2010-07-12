@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    
-    <string name="app_name">Cineti</string>
-<string name="movies">Movies</string>
-<string name="cinemas">Theatres</string>
+	<string name="app_name">Cinetica</string>
+	<string name="movies">Movies</string>
+	<string name="cinemas">Theatres</string>
 </resources>
