@@ -47,6 +47,12 @@ public class MovieData {
 	// Maps from a date string in yyyy-mm-dd format to a list of theatres & showtimes.
 	private Map<String, List<Map<String, String>>> showings;
 	
+	/**
+	 * Extract the showtimes for a movie from a JSON object.
+	 * @param ctx App context
+	 * @param id movie ID num
+	 * @param json JSON object containing movie details
+	 */
 	public MovieData(Context ctx, int id, JSONObject json) {
 		this.id = id;
 		try {
@@ -61,20 +67,10 @@ public class MovieData {
 				String cinemaName = cinemaDetails.getString("name");
 				try {
 					CinemaData cinema = CinemaData.parseString(cinemaName);
-					List<Time> showTimes = new LinkedList<Time>();
-					JSONArray times = cinemaDetails.getJSONArray("times");
-					if (times.length() == 0) {
-						Log.e("Cineti", "No times could be extracted from the JSON data: " + cinemaDetails);
-						continue;
+					List<Time> showTimes = parseShowtimes(cinemaDetails);
+					if (showTimes.size() > 0) {
+						today.put(cinema, showTimes);
 					}
-					String date = cinemaDetails.getString("date");
-					for (int j = 0; j < times.length(); j++) {
-						String showTime = times.getString(j);
-						Time screening = new Time();
-						screening.parse3339(date + 'T' + showTime);
-						showTimes.add(screening);
-					}
-					today.put(cinema, showTimes);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -114,13 +110,37 @@ public class MovieData {
 			e.printStackTrace();
 		}
 	}
+
+	/**
+	 * Utility method to parse out the schedule of a given movie at a specific cinema from JSON data.
+	 * @param cinemaDetails JSON object containing the schedule to be parsed.
+	 * @return
+	 * @throws JSONException
+	 */
+	private List<Time> parseShowtimes(JSONObject cinemaDetails)
+			throws JSONException {
+		List<Time> showTimes = new LinkedList<Time>();
+		JSONArray times = cinemaDetails.getJSONArray("times");
+		if (times.length() == 0) {
+			Log.e("Cineti", "No times could be extracted from the JSON data: " + cinemaDetails);
+		} else {
+			String date = cinemaDetails.getString("date");
+			for (int j = 0; j < times.length(); j++) {
+				String showTime = times.getString(j);
+				Time screening = new Time();
+				screening.parse3339(date + 'T' + showTime);
+				showTimes.add(screening);
+			}
+		}
+		return showTimes;
+	}
 	
 	/**
-	 * Populate the ID, title and thumbnail from a JSON object.
+	 * Populate the ID, title and either thumbnail or showtimes from a JSON object.
 	 * @param ctx App context for loading cached thumbnail image.
 	 * @param json JSON data containing movie ID, title & thumbnail URl. 
 	 */
-	public MovieData(Context ctx, JSONObject json) {
+	public MovieData(Context ctx, JSONObject json, CinemaData cinema) {
 		try {
 			// Parse out the movie's ID #
 			String spime = json.getString("href");
@@ -133,18 +153,19 @@ public class MovieData {
 			try {
 				in = ctx.openFileInput(filename);
 			} catch (FileNotFoundException e) {
-				String url = json.getString("thumbnail");
-				URL thumb = new URL(url);
-				in = thumb.openStream();
-				// Save the image to a file
-				FileOutputStream out = ctx.openFileOutput(filename, 0);
-				byte[] buffer = MovieData.toByteArray(in);
-				out.write(buffer);
-				out.flush();
-				in.close();
-				out.close();
-				// Reopen the image URL to reread it.
-				in = thumb.openStream();
+					// Load thumbnail from server.
+					String url = json.getString("thumbnail");
+					URL thumb = new URL(url);
+					in = thumb.openStream();
+					// Save the image to a file
+					FileOutputStream out = ctx.openFileOutput(filename, 0);
+					byte[] buffer = MovieData.toByteArray(in);
+					out.write(buffer);
+					out.flush();
+					in.close();
+					out.close();
+					// Reopen the image URL to reread it.
+					in = thumb.openStream();
 			}
 			this.thumbnail = BitmapFactory.decodeStream(in);
 			if (this.thumbnail == null) {
@@ -159,6 +180,33 @@ public class MovieData {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		
+		if (cinema != null) {
+			// Load schedule.
+			SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(id), 0);
+			if (!loadCachedShowings(cachedData) ||
+				!this.showings.containsKey(new SimpleDateFormat("E").format(new Date()) + '@' + cinema.toString())) {
+				// No cached schedule so pull from server.
+				this.showings = new HashMap<String, List<Map<String, String>>>();
+				try {
+					List<Time> showTimes = parseShowtimes(json);
+					List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
+					Map<String, String> deets = new HashMap<String, String>();
+					StringBuffer times = new StringBuffer();
+					for (Time t : showTimes) {
+						times.append(t.format("%l:%M%p "));
+					}
+					deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
+					deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+					screenings.add(deets);
+					this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
 		}
 	}
 
@@ -247,6 +295,13 @@ public class MovieData {
 		this.genre = cachedData.getString(GENRE, "generic");
 		this.title = cachedData.getString(TITLE, "Untitled");
 		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
+		loadCachedShowings(cachedData);
+	}
+
+	/**
+	 * @param cachedData
+	 */
+	private boolean loadCachedShowings(SharedPreferences cachedData) {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
 		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
 		String currentDay = new SimpleDateFormat("E").format(new Date());
@@ -260,9 +315,21 @@ public class MovieData {
 			}
 		}
 		this.showings.put(currentDay, today);
+		return today.size() > 0;
 	}
 
 	public List<Map<String, String>> getScreenings() {
 		return this.showings.get(new SimpleDateFormat("E").format(new Date()));
+	}
+	
+	public String getScreenings(CinemaData cinema) {
+		List<Map<String, String>> all = this.showings.get(new SimpleDateFormat("E").format(new Date()));
+		for (Map<String, String> schedule : all) {
+			if (schedule.get(Movie.FetchTask.CINEMA_NAME).equals(cinema.toString() + ": ")) {
+				return schedule.get(Movie.FetchTask.SHOW_TIMES);
+			}
+		}
+		Log.w("cineti", "No showings of " + this.title + " found at " + cinema.toString() + " for today.");
+		return "";
 	}
 }

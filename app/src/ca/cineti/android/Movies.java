@@ -15,6 +15,6 @@ public class Movies extends Activity {
 
         GridView gridview = (GridView) findViewById(R.id.gridview);
         ImageAdapter imgAdapter = new ImageAdapter(this);
-        gridview .setAdapter(imgAdapter);
+        gridview.setAdapter(imgAdapter);
     }
 }

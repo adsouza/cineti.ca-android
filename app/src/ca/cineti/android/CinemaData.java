@@ -21,7 +21,7 @@ public enum CinemaData {
 	
 	static CinemaData parseString(String ascii) throws Exception {
 		for (CinemaData c : array) {
-			if (c.fullName.equals(ascii)) {
+			if (c.fullName.equals(ascii) || c.name().equals(ascii)) {
 				return c;
 			}
 		}

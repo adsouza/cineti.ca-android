@@ -51,7 +51,7 @@ public class ImageAdapter extends BaseAdapter {
 			assert jsonMoviesData.length == 1;
 			this.jsonMovies = jsonMoviesData;
 			int pos = ImageAdapter.this.mNumLoaded + ImageAdapter.this.movies.length - (this.opposingIndex + 1);
-			return new MovieData(context, jsonMoviesData[0].getJSONObject(pos));
+			return new MovieData(context, jsonMoviesData[0].getJSONObject(pos), null);
         }
 
 		@Override
@@ -65,6 +65,7 @@ public class ImageAdapter extends BaseAdapter {
 				this.opposingIndex--;
 			}
 			if (ImageAdapter.this.mNumLoaded <= this.opposingIndex) {
+				// Trigger the chain-reaction.
 				new ImgLoadTask(this.getCallingContext(), this.opposingIndex, this.losers).execute(this.jsonMovies);
 			} else {
 				// Save the current movie IDs and titles in cache for offline use.
