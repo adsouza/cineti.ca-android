@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -90,7 +88,7 @@ public class MovieData {
 				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
 				screenings.add(deets);
 			}
-			this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
+			this.showings.put(Day.today().name(), screenings);
 			
 			String filename = Integer.toString(id) + EXT_JPEG;
 			try {
@@ -150,7 +148,7 @@ public class MovieData {
 		// Load schedule.
 		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(this.id), 0);
 		if (!loadCachedShowings(cachedData) ||
-			!this.showings.containsKey(new SimpleDateFormat("E").format(new Date()) + '@' + cinema.toString())) {
+			!this.showings.containsKey(Day.today().name() + '@' + cinema.toString())) {
 			// No cached schedule so extract from JSON.
 			this.showings = new HashMap<String, List<Map<String, String>>>();
 			try {
@@ -164,7 +162,8 @@ public class MovieData {
 				deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
 				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
 				screenings.add(deets);
-				this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
+				this.showings.put(Day.today().name(), screenings);
+				this.persist(ctx);
 			} catch (JSONException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -290,7 +289,7 @@ public class MovieData {
 		ed.putString(TITLE, this.title);
 		ed.putString(GENRE, this.genre);
 		ed.putString(SYNOPSIS, this.synopsis);
-		String today = new SimpleDateFormat("E").format(new Date());
+		String today = Day.today().name();
 		for (Map<String, String> showTimes : this.showings.get(today)) {
 			String cinemaName = showTimes.get(Movie.FetchTask.CINEMA_NAME);
 			ed.putString(today + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
@@ -320,7 +319,7 @@ public class MovieData {
 	private boolean loadCachedShowings(SharedPreferences cachedData) {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
 		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
-		String currentDay = new SimpleDateFormat("E").format(new Date());
+		String currentDay = Day.today().name();
 		for (Cinema cinema : Cinema.array) {
 			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
 			if (showTimes.length() > 0) {
@@ -335,11 +334,11 @@ public class MovieData {
 	}
 
 	public List<Map<String, String>> getScreenings() {
-		return this.showings.get(new SimpleDateFormat("E").format(new Date()));
+		return this.showings.get(Day.today().name());
 	}
 	
 	public String getScreenings(Cinema cinema) {
-		List<Map<String, String>> all = this.showings.get(new SimpleDateFormat("E").format(new Date()));
+		List<Map<String, String>> all = this.showings.get(Day.today().name());
 		for (Map<String, String> schedule : all) {
 			if (schedule.get(Movie.FetchTask.CINEMA_NAME).equals(cinema.toString() + ": ")) {
 				return schedule.get(Movie.FetchTask.SHOW_TIMES);
