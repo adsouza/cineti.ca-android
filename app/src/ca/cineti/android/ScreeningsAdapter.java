@@ -18,12 +18,12 @@ import android.widget.TextView;
 public class ScreeningsAdapter extends ArrayAdapter<MovieData> {
 
 	private int resource;
-	private CinemaData cinema;
+	private Cinema cinema;
 
 	public ScreeningsAdapter(Context context, 
 							int resource,  
 							List<MovieData> items,
-							CinemaData cinema) {
+							Cinema cinema) {
 		super(context, resource, items);
 		this.resource = resource;
 		this.cinema = cinema;

@@ -24,11 +24,11 @@ public class Cinemas extends Activity {
         		TextView tv = (TextView)v;
         		String chars = tv.getText().toString();
         		try {
-					CinemaData cd = CinemaData.parseString(chars);
+					Cinema cd = Cinema.parseString(chars);
 					String url = "http://api.cineti.ca/theater/" + cd.name() + ".json";
 					Log.d("cinetica", url);
-					Intent intentToWatch = new Intent(Cinemas.this, Cinema.class);
-					intentToWatch.putExtra(Cinema.CINEMA_NAME, cd.name());
+					Intent intentToWatch = new Intent(Cinemas.this, Screenings.class);
+					intentToWatch.putExtra(Screenings.CINEMA_NAME, cd.name());
 					Cinemas.this.startActivity(intentToWatch);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block

@@ -60,14 +60,14 @@ public class MovieData {
 			this.title = json.getString("title");
 			this.genre = json.getString(GENRE);
 			this.synopsis = json.getString("plot");
-			Map<CinemaData, List<Time>> today = new EnumMap<CinemaData, List<Time>>(CinemaData.class);
+			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
 			// Parse the cinema name and screening times
 			JSONArray cinemas = json.getJSONArray("theaters");
 			for (int i = 0; i < cinemas.length(); i++) {
 				JSONObject cinemaDetails = cinemas.getJSONObject(i);
 				String cinemaName = cinemaDetails.getString("name");
 				try {
-					CinemaData cinema = CinemaData.parseString(cinemaName);
+					Cinema cinema = Cinema.parseString(cinemaName);
 					List<Time> showTimes = parseShowtimes(cinemaDetails);
 					if (showTimes.size() > 0) {
 						today.put(cinema, showTimes);
@@ -80,7 +80,7 @@ public class MovieData {
 			// Format and store the screening times as strings
 			this.showings = new HashMap<String, List<Map<String, String>>>();
 			List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
-			for (Map.Entry<CinemaData, List<Time>> c : today.entrySet()) {
+			for (Map.Entry<Cinema, List<Time>> c : today.entrySet()) {
 				Map<String, String> deets = new HashMap<String, String>();
 				StringBuffer times = new StringBuffer();
 				for (Time t : c.getValue()) {
@@ -142,7 +142,7 @@ public class MovieData {
 	 * @param json JSON data containing movie ID, title & schedule for a particular cinema. 
 	 * @param cinema The cinema for which to retrieve the showtimes.
 	 */
-	public MovieData(Context ctx, JSONObject json, CinemaData cinema) {
+	public MovieData(Context ctx, JSONObject json, Cinema cinema) {
 		this(ctx, json);
 		if (this.thumbnail == null) {
 			this.thumbnail = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.thumbnail);
@@ -321,7 +321,7 @@ public class MovieData {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
 		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
 		String currentDay = new SimpleDateFormat("E").format(new Date());
-		for (CinemaData cinema : CinemaData.array) {
+		for (Cinema cinema : Cinema.array) {
 			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
 			if (showTimes.length() > 0) {
 				Map<String, String> deets = new HashMap<String, String>();
@@ -338,7 +338,7 @@ public class MovieData {
 		return this.showings.get(new SimpleDateFormat("E").format(new Date()));
 	}
 	
-	public String getScreenings(CinemaData cinema) {
+	public String getScreenings(Cinema cinema) {
 		List<Map<String, String>> all = this.showings.get(new SimpleDateFormat("E").format(new Date()));
 		for (Map<String, String> schedule : all) {
 			if (schedule.get(Movie.FetchTask.CINEMA_NAME).equals(cinema.toString() + ": ")) {
