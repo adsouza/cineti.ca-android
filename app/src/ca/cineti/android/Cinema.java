@@ -1,6 +1,7 @@
 package ca.cineti.android;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -45,15 +46,18 @@ public class Cinema extends ListActivity {
 			JSONArray jsonScreenings = cinemaInfo.getJSONArray("movies");
 			for (int i = jsonScreenings.length() - 1; i >= 0; i--) {
 				JSONObject screeningInfo = jsonScreenings.getJSONObject(i);
-				movies.add(new MovieData(this, screeningInfo, cinema));
+				this.movies.add(new MovieData(this, screeningInfo, cinema));
 			}
-			this.setListAdapter(new ScreeningsAdapter(this, R.layout.screenings, movies, cinema));
+			this.setListAdapter(new ScreeningsAdapter(this, R.layout.screenings, this.movies, cinema));
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (UnknownHostException e) {
+			//TODO: offline so use cached data.
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

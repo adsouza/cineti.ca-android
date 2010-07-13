@@ -25,6 +25,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.text.Html;
 import android.text.format.Time;
 import android.util.Log;
 
@@ -136,18 +137,56 @@ public class MovieData {
 	}
 	
 	/**
-	 * Populate the ID, title and either thumbnail or showtimes from a JSON object.
+	 * Populate the ID, title, thumbnail & showtimes from a JSON object.
 	 * @param ctx App context for loading cached thumbnail image.
-	 * @param json JSON data containing movie ID, title & thumbnail URl. 
+	 * @param json JSON data containing movie ID, title & schedule for a particular cinema. 
+	 * @param cinema The cinema for which to retrieve the showtimes.
 	 */
 	public MovieData(Context ctx, JSONObject json, CinemaData cinema) {
+		this(ctx, json);
+		if (this.thumbnail == null) {
+			this.thumbnail = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.thumbnail);
+		}
+		// Load schedule.
+		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(this.id), 0);
+		if (!loadCachedShowings(cachedData) ||
+			!this.showings.containsKey(new SimpleDateFormat("E").format(new Date()) + '@' + cinema.toString())) {
+			// No cached schedule so pull from server.
+			this.showings = new HashMap<String, List<Map<String, String>>>();
+			try {
+				List<Time> showTimes = parseShowtimes(json);
+				List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
+				Map<String, String> deets = new HashMap<String, String>();
+				StringBuffer times = new StringBuffer();
+				for (Time t : showTimes) {
+					times.append(t.format("%l:%M%p "));
+				}
+				deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
+				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+				screenings.add(deets);
+				this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	/**
+	 * Populate the ID, title and thumbnail from a JSON object.
+	 * @param ctx App context for loading cached thumbnail image.
+	 * @param json JSON data containing movie ID, title & thumbnail URl.
+	 * @throws NumberFormatException
+	 */
+	public MovieData(Context ctx, JSONObject json)
+			throws NumberFormatException {
 		try {
 			// Parse out the movie's ID #
 			String spime = json.getString("href");
 			String idNum = spime.substring(spime.lastIndexOf('/') + 1);
 			this.id = Integer.parseInt(idNum);
 			// Fetch the title and thumbnail poster image
-			this.title = json.getString("title");
+			this.title = Html.fromHtml(json.getString("title")).toString();
 			InputStream in;
 			String filename = idNum + EXT_JPEG;
 			try {
@@ -180,33 +219,6 @@ public class MovieData {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		if (cinema != null) {
-			// Load schedule.
-			SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(id), 0);
-			if (!loadCachedShowings(cachedData) ||
-				!this.showings.containsKey(new SimpleDateFormat("E").format(new Date()) + '@' + cinema.toString())) {
-				// No cached schedule so pull from server.
-				this.showings = new HashMap<String, List<Map<String, String>>>();
-				try {
-					List<Time> showTimes = parseShowtimes(json);
-					List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
-					Map<String, String> deets = new HashMap<String, String>();
-					StringBuffer times = new StringBuffer();
-					for (Time t : showTimes) {
-						times.append(t.format("%l:%M%p "));
-					}
-					deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
-					deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
-					screenings.add(deets);
-					this.showings.put(new SimpleDateFormat("E").format(new Date()), screenings);
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-			}
 		}
 	}
 
@@ -271,9 +283,9 @@ public class MovieData {
 	 */
 	public void persist(Context ctx) {
 		Editor ed = ctx.getSharedPreferences(Integer.toString(this.id), 0).edit();
-		ed.putString(TITLE, title);
-		ed.putString(GENRE, genre);
-		ed.putString(SYNOPSIS, synopsis);
+		ed.putString(TITLE, this.title);
+		ed.putString(GENRE, this.genre);
+		ed.putString(SYNOPSIS, this.synopsis);
 		String today = new SimpleDateFormat("E").format(new Date());
 		for (Map<String, String> showTimes : this.showings.get(today)) {
 			String cinemaName = showTimes.get(Movie.FetchTask.CINEMA_NAME);

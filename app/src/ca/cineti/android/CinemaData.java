@@ -15,6 +15,7 @@ public enum CinemaData {
 		this.fullName = longForm;
 	}
 	
+	@Override
 	public String toString() {
 		return this.fullName;
 	}

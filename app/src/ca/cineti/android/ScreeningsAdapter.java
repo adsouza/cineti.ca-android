@@ -46,7 +46,7 @@ public class ScreeningsAdapter extends ArrayAdapter<MovieData> {
 		TextView title = (TextView)screeningView.findViewById(R.id.movieTitle);
 		title.setText(data.getTitle());
 		TextView screenings = (TextView)screeningView.findViewById(R.id.screenings);
-		screenings.setText(data.getScreenings(cinema));
+		screenings.setText(data.getScreenings(this.cinema));
 		ImageView thumbnail = (ImageView)screeningView.findViewById(R.id.thumbnail);
 		thumbnail.setImageBitmap(data.getThumbnail());
 		return screeningView;
