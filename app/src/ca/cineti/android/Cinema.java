@@ -1,9 +1,9 @@
 package ca.cineti.android;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.app.ListActivity;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.view.Window;
 
@@ -39,34 +40,51 @@ public class Cinema extends ListActivity {
 		setProgressBarIndeterminateVisibility(true);
 		try {
 			CinemaData cinema = CinemaData.parseString(cinemaName);
-			JSONObject cinemaInfo =
-				new JSONObject(new DefaultHttpClient().execute(Main.targetHost, 
-																new HttpGet(url), 
-																new BasicResponseHandler()));
-			JSONArray jsonScreenings = cinemaInfo.getJSONArray("movies");
-			for (int i = jsonScreenings.length() - 1; i >= 0; i--) {
-				JSONObject screeningInfo = jsonScreenings.getJSONObject(i);
-				this.movies.add(new MovieData(this, screeningInfo, cinema));
+			try {
+				JSONObject cinemaInfo =
+					new JSONObject(new DefaultHttpClient().execute(Main.targetHost, 
+																	new HttpGet(url), 
+																	new BasicResponseHandler()));
+				JSONArray jsonScreenings = cinemaInfo.getJSONArray("movies");
+				for (int i = jsonScreenings.length() - 1; i >= 0; i--) {
+					JSONObject screeningInfo = jsonScreenings.getJSONObject(i);
+					this.movies.add(new MovieData(this, screeningInfo, cinema));
+				}
+				this.setListAdapter(new ScreeningsAdapter(this, R.layout.screenings, this.movies, cinema));
+			} catch (ClientProtocolException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				// Offline so use cached data.
+				Map<String, ?> movieTitles = this.getSharedPreferences(cinema.name(), 0).getAll();;
+		        for (Map.Entry<String, ?> movieData : movieTitles.entrySet()) {
+		        	this.movies.add(new MovieData(this, movieData));
+		        }
+		        this.setListAdapter(new ScreeningsAdapter(this, R.layout.screenings, this.movies, cinema));
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-			this.setListAdapter(new ScreeningsAdapter(this, R.layout.screenings, this.movies, cinema));
-		} catch (ClientProtocolException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnknownHostException e) {
-			//TODO: offline so use cached data.
+			setProgressBarIndeterminateVisibility(false);
+			this.getListView().setTextFilterEnabled(true);
 			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// Cache the list of movie IDs for this cinema.
+			Editor ed = this.getSharedPreferences(cinema.name(), 0).edit();
+			ed.clear();
+			for (MovieData movie : this.movies) {
+				if (movie.getThumbnail() != null) {
+					ed.putString(Integer.toString(movie.getId()), movie.getTitle());
+				}
+			}
+			ed.commit();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		setProgressBarIndeterminateVisibility(false);
-		this.getListView().setTextFilterEnabled(true);
 	}
-
 }

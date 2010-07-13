@@ -151,7 +151,7 @@ public class MovieData {
 		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(this.id), 0);
 		if (!loadCachedShowings(cachedData) ||
 			!this.showings.containsKey(new SimpleDateFormat("E").format(new Date()) + '@' + cinema.toString())) {
-			// No cached schedule so pull from server.
+			// No cached schedule so extract from JSON.
 			this.showings = new HashMap<String, List<Map<String, String>>>();
 			try {
 				List<Time> showTimes = parseShowtimes(json);
@@ -234,7 +234,7 @@ public class MovieData {
 	}
 
 	/**
-	 * Populate the ID, title and thumbnail from a Map entry mapping ID to title.
+	 * Populate the ID, title and thumbnail from a Map entry mapping ID to title. Also try to load cached schedule.
 	 * @param ctx App context for loading cached thumbnail image.
 	 * @param movieData Map entry with ID as key and title as value.
 	 */
@@ -248,6 +248,10 @@ public class MovieData {
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+		loadCachedShowings(ctx.getSharedPreferences(Integer.toString(this.id), 0));
+		if (this.thumbnail == null) {
+			this.thumbnail = BitmapFactory.decodeResource(ctx.getResources(), R.drawable.thumbnail);
 		}
 	}
 
@@ -342,6 +346,6 @@ public class MovieData {
 			}
 		}
 		Log.w("cineti", "No showings of " + this.title + " found at " + cinema.toString() + " for today.");
-		return "";
+		return "No showings today.";
 	}
 }
