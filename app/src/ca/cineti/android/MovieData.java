@@ -31,6 +31,12 @@ import android.util.Log;
  * Encapsulates all the metadata about a movie.
  */
 public class MovieData {
+	private static final String LARGE = "large";
+	private static final String SIZE = "size";
+	private static final String POSTERS = "posters";
+	private static final String NAME = "name";
+	private static final String THEATRES = "theaters";
+	private static final String PLOT = "plot";
 	private static final String TITLE = "title";
 	private static final String SYNOPSIS = "synopsis";
 	private static final String GENRE = "genre";
@@ -43,7 +49,7 @@ public class MovieData {
 	private String title;
 	private String synopsis;
 	private String genre;
-	// Maps from a date string in yyyy-mm-dd format to a list of theatres & showtimes.
+	// Maps from a day to a list of theatres & showtimes.
 	private Map<String, List<Map<String, String>>> showings;
 	
 	/**
@@ -55,41 +61,16 @@ public class MovieData {
 	public MovieData(Context ctx, int id, JSONObject json) {
 		this.id = id;
 		try {
-			this.title = json.getString("title");
+			this.title = json.getString(TITLE);
 			this.genre = json.getString(GENRE);
-			this.synopsis = json.getString("plot");
-			Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
-			// Parse the cinema name and screening times
-			JSONArray cinemas = json.getJSONArray("theaters");
-			for (int i = 0; i < cinemas.length(); i++) {
-				JSONObject cinemaDetails = cinemas.getJSONObject(i);
-				String cinemaName = cinemaDetails.getString("name");
-				try {
-					Cinema cinema = Cinema.parseString(cinemaName);
-					List<Time> showTimes = parseShowtimes(cinemaDetails);
-					if (showTimes.size() > 0) {
-						today.put(cinema, showTimes);
-					}
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			// Format and store the screening times as strings
+			this.synopsis = json.getString(PLOT);
 			this.showings = new HashMap<String, List<Map<String, String>>>();
-			List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
-			for (Map.Entry<Cinema, List<Time>> c : today.entrySet()) {
-				Map<String, String> deets = new HashMap<String, String>();
-				StringBuffer times = new StringBuffer();
-				for (Time t : c.getValue()) {
-					times.append(t.format("%l:%M%p "));
-				}
-				deets.put(Movie.CINEMA_NAME, c.getKey().toString() + ": ");
-				deets.put(Movie.SHOW_TIMES, times.toString());
-				screenings.add(deets);
-			}
+			
+			// Parse the cinema name and screening times
+			List<Map<String, String>> screenings = extractScreenings(json);
 			this.showings.put(Day.today().name(), screenings);
 			
+			// Load the image. 
 			String filename = Integer.toString(id) + EXT_JPEG;
 			try {
 				InputStream in = ctx.openFileInput(filename);
@@ -98,9 +79,9 @@ public class MovieData {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			JSONArray posters = json.getJSONArray("posters");
+			JSONArray posters = json.getJSONArray(POSTERS);
 			for (int i = 0; i< posters.length(); i++) {
-				if (posters.getJSONObject(i).getString("size").equals("large")) {
+				if (posters.getJSONObject(i).getString(SIZE).equals(LARGE)) {
 					break;
 				}
 			}
@@ -108,6 +89,54 @@ public class MovieData {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	public void absorbShowtimes(Day day, JSONObject json) {
+		try {
+			List<Map<String, String>> screenings = extractScreenings(json);
+			this.showings.put(day.name(), screenings);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * @param json
+	 * @return
+	 * @throws JSONException
+	 */
+	private List<Map<String, String>> extractScreenings(JSONObject json)
+			throws JSONException {
+		Map<Cinema, List<Time>> today = new EnumMap<Cinema, List<Time>>(Cinema.class);
+		JSONArray cinemas = json.getJSONArray(THEATRES);
+		for (int i = 0; i < cinemas.length(); i++) {
+			JSONObject cinemaDetails = cinemas.getJSONObject(i);
+			String cinemaName = cinemaDetails.getString(NAME);
+			try {
+				Cinema cinema = Cinema.parseString(cinemaName);
+				List<Time> showTimes = parseShowtimes(cinemaDetails);
+				if (showTimes.size() > 0) {
+					today.put(cinema, showTimes);
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		// Format and store the screening times as strings
+		List<Map<String, String>> screenings = new LinkedList<Map<String, String>>();
+		for (Map.Entry<Cinema, List<Time>> c : today.entrySet()) {
+			Map<String, String> deets = new HashMap<String, String>();
+			StringBuffer times = new StringBuffer();
+			for (Time t : c.getValue()) {
+				times.append(t.format("%l:%M%p "));
+			}
+			deets.put(Movie.CINEMA_NAME, c.getKey().toString() + ": ");
+			deets.put(Movie.SHOW_TIMES, times.toString());
+			screenings.add(deets);
+		}
+		return screenings;
 	}
 
 	/**

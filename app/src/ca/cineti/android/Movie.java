@@ -1,6 +1,7 @@
 package ca.cineti.android;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,11 +34,14 @@ public class Movie extends Activity {
 	{
 		private static final String DAY = "day";
 		private static final String MOVIE = "http://api.cineti.ca/movie/";
+		
 		private int id;
+		private Map<Day, JSONObject> weekRem;
 		
 		FetchTask(Context ctx, int id) {
             super(ctx);
             this.id = id;
+            this.weekRem = new EnumMap<Day, JSONObject>(Day.class);
         }
 		
 		/* (non-Javadoc)
@@ -45,9 +49,21 @@ public class Movie extends Activity {
          */
         @Override
         protected JSONObject doCheckedInBackground(Context context, Void... bleh) throws Exception {
-        	return new JSONObject(new DefaultHttpClient().execute(Main.targetHost, 
+        	JSONObject result = new JSONObject(new DefaultHttpClient().execute(Main.targetHost, 
         														  new HttpGet(MOVIE + Integer.toString(this.id) + ".json"), 
         														  new BasicResponseHandler()));
+        	Day today = Day.today();
+        	Day counter = today.next();
+        	JSONObject futureData;
+        	while (counter != today) {
+        		String url = MOVIE + Integer.toString(this.id) + ".json?day=" + counter.name();
+        		futureData = new JSONObject(new DefaultHttpClient().execute(Main.targetHost, 
+						  													new HttpGet(url), 
+						  													new BasicResponseHandler()));
+        		this.weekRem.put(counter, futureData);
+        		counter = counter.next();
+        	}
+        	return result;
         }
 
 		@Override
@@ -62,6 +78,9 @@ public class Movie extends Activity {
 		protected void after(Context ctx, JSONObject jsonMovie) {
 			MovieData data = new MovieData(ctx, this.id, jsonMovie);
 			displayInfo(data);
+			for (Map.Entry<Day, JSONObject> futureData : this.weekRem.entrySet()) {
+				data.absorbShowtimes(futureData.getKey(), futureData.getValue());
+			}
 			data.persist(ctx);
 		}
 
