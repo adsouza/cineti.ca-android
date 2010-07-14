@@ -98,6 +98,7 @@ public class Movie extends Activity {
 			synopsis.setText(data.getSynopsis());
 			final List<Map<String, String>> headerData = new ArrayList<Map<String, String>>();
 			Map<String, String> day = new HashMap<String, String>();
+			//TODO: display schedules for rest of week tooo.
 			day.put(DAY, "today");
 			headerData.add(day);
 			final List<List<Map<String, String>>> contentData = new ArrayList<List<Map<String, String>>>();

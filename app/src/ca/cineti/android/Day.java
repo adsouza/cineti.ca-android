@@ -18,6 +18,7 @@ public enum Day {
 	sun("Sunday");
 	
 	static Day[] week = { mon, tue, wed, thu, fri, sat, sun };
+	private static Day today = computeToday();
 	
 	private String fullName;
 	
@@ -27,7 +28,15 @@ public enum Day {
 	
 	@Override
 	public String toString() {
-		return this.fullName;
+		String friendlyName;
+		if (this == today) {
+			friendlyName = "Today";
+		} else if (this == today.next()) {
+			friendlyName = "Tommorrow";
+		} else {
+			friendlyName = this.fullName;
+		}
+		return friendlyName;
 	}
 	
 	public Day next() {
@@ -45,6 +54,10 @@ public enum Day {
 	}
 	
 	public static Day today() {
+		return today;
+	}
+	
+	private static Day computeToday() {
 		try {
 			return parseString(new SimpleDateFormat("E").format(new Date()));
 		} catch (Exception e) {

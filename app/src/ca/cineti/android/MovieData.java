@@ -325,10 +325,13 @@ public class MovieData {
 		Day today = Day.today();
 		Day someDay = today;
 		do {
-			for (Map<String, String> showTimes : this.showings.get(someDay.name())) {
-				String cinemaName = showTimes.get(Movie.CINEMA_NAME);
-				ed.putString(someDay.name() + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
-							 showTimes.get(Movie.SHOW_TIMES));
+			List<Map<String, String>> screenings = this.showings.get(someDay.name());
+			if (screenings != null) {
+				for (Map<String, String> showTimes : screenings) {
+					String cinemaName = showTimes.get(Movie.CINEMA_NAME);
+					ed.putString(someDay.name() + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
+								 showTimes.get(Movie.SHOW_TIMES));
+				}
 			}
 			someDay = someDay.next();
 		} while (someDay != today);
@@ -340,6 +343,7 @@ public class MovieData {
 	 */
 	private boolean loadCachedShowings(SharedPreferences cachedData) {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
+		//TODO: load the rest of the week too.
 		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
 		String currentDay = Day.today().name();
 		for (Cinema cinema : Cinema.array) {
@@ -371,6 +375,7 @@ public class MovieData {
 	}
 
 	public List<Map<String, String>> getScreenings() {
+		//TODO: display the rest of the week tooo.
 		return this.showings.get(Day.today().name());
 	}
 	
