@@ -5,6 +5,7 @@ import org.apache.http.HttpHost;
 import android.app.TabActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Window;
 import android.widget.TabHost;
 
 public class Main extends TabActivity {
@@ -15,7 +16,9 @@ public class Main extends TabActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
         setContentView(R.layout.main);
+        setProgressBarIndeterminateVisibility(true);
         
         TabHost tabHost = getTabHost(); // The activity TabHost
         TabHost.TabSpec spec; // Reusable TabSpec for each tab

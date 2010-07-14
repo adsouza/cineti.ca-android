@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
+import android.view.Window;
 import android.widget.ExpandableListView;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
@@ -95,6 +96,7 @@ public class Movie extends Activity {
 												 new int[] { R.id.cinemaName, R.id.showTimes });
 			elv.setAdapter(expListAdapter);
 			elv.expandGroup(0);
+			setProgressBarIndeterminateVisibility(false);
 		}
 	}
 
@@ -104,8 +106,10 @@ public class Movie extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		int id = this.getIntent().getIntExtra(MOVIE_ID, 0);
 		setContentView(R.layout.movie);
+		setProgressBarIndeterminateVisibility(true);
 		new FetchTask(getApplicationContext(), id).execute();
 	}
 

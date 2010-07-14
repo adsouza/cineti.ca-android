@@ -33,10 +33,10 @@ public class Screenings extends ListActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		this.movies = new LinkedList<MovieData>();
 		String cinemaName = this.getIntent().getStringExtra(CINEMA_NAME);
 		String url = "http://api.cineti.ca/theater/" + cinemaName + ".json";
-		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
 		setProgressBarIndeterminateVisibility(true);
 		try {
 			Cinema cinema = Cinema.parseString(cinemaName);

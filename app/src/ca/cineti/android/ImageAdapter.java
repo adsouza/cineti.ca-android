@@ -32,7 +32,6 @@ public class ImageAdapter extends BaseAdapter {
 	
 	private class ImgLoadTask extends BetterAsyncTask<JSONArray, Void, MovieData>
 	{
-
 		private int opposingIndex;
 		private JSONArray[] jsonMovies;
 		private Set<Integer> losers;
@@ -81,6 +80,7 @@ public class ImageAdapter extends BaseAdapter {
 				for (int id : this.losers) {
 					ctx.deleteFile(String.valueOf(id) + ".jpg");
 				}
+				ImageAdapter.this.mOwner.getParent().setProgressBarIndeterminateVisibility(false);
 			}
 			ImageAdapter.this.notifyDataSetChanged();
 		}
@@ -98,6 +98,7 @@ public class ImageAdapter extends BaseAdapter {
 
 		RefreshTask(Context ctx) {
             super(ctx);
+            ImageAdapter.this.mOwner.getParent().setProgressBarIndeterminateVisibility(true);
         }
 		
 		/* (non-Javadoc)
