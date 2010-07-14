@@ -25,15 +25,14 @@ import com.github.droidfu.concurrent.BetterAsyncTask;
 public class Movie extends Activity {
 
 	static final String MOVIE_ID = Main.PKG_NAME + ".movieID";
+	static final String SHOW_TIMES = "showTimes";
+	static final String CINEMA_NAME = "cinemaName";
 	
 	class FetchTask extends BetterAsyncTask<Void, Void, JSONObject>
 	{
 		private static final String DAY = "day";
 		private static final String MOVIE = "http://api.cineti.ca/movie/";
 		private int id;
-		
-		static final String SHOW_TIMES = "showTimes";
-		static final String CINEMA_NAME = "cinemaName";
 		
 		FetchTask(Context ctx, int id) {
             super(ctx);
@@ -92,7 +91,7 @@ public class Movie extends Activity {
 												 new int[] {android.R.id.text1}, 
 												 contentData, 
 												 R.layout.daily_showings, 
-												 new String[] { CINEMA_NAME, SHOW_TIMES }, 
+												 new String[] { Movie.CINEMA_NAME, Movie.SHOW_TIMES }, 
 												 new int[] { R.id.cinemaName, R.id.showTimes });
 			elv.setAdapter(expListAdapter);
 			elv.expandGroup(0);

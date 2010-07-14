@@ -84,8 +84,8 @@ public class MovieData {
 				for (Time t : c.getValue()) {
 					times.append(t.format("%l:%M%p "));
 				}
-				deets.put(Movie.FetchTask.CINEMA_NAME, c.getKey().toString() + ": ");
-				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+				deets.put(Movie.CINEMA_NAME, c.getKey().toString() + ": ");
+				deets.put(Movie.SHOW_TIMES, times.toString());
 				screenings.add(deets);
 			}
 			this.showings.put(Day.today().name(), screenings);
@@ -159,8 +159,8 @@ public class MovieData {
 				for (Time t : showTimes) {
 					times.append(t.format("%l:%M%p "));
 				}
-				deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
-				deets.put(Movie.FetchTask.SHOW_TIMES, times.toString());
+				deets.put(Movie.CINEMA_NAME, cinema.toString() + ": ");
+				deets.put(Movie.SHOW_TIMES, times.toString());
 				screenings.add(deets);
 				this.showings.put(Day.today().name(), screenings);
 				this.persist(ctx);
@@ -287,13 +287,17 @@ public class MovieData {
 	public void persist(Context ctx) {
 		Editor ed = ctx.getSharedPreferences(Integer.toString(this.id), 0).edit();
 		ed.putString(TITLE, this.title);
-		ed.putString(GENRE, this.genre);
-		ed.putString(SYNOPSIS, this.synopsis);
+		if (this.genre != null) {
+			ed.putString(GENRE, this.genre);
+		}
+		if (this.synopsis != null) {
+			ed.putString(SYNOPSIS, this.synopsis);
+		}
 		String today = Day.today().name();
 		for (Map<String, String> showTimes : this.showings.get(today)) {
-			String cinemaName = showTimes.get(Movie.FetchTask.CINEMA_NAME);
+			String cinemaName = showTimes.get(Movie.CINEMA_NAME);
 			ed.putString(today + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
-						 showTimes.get(Movie.FetchTask.SHOW_TIMES));
+						 showTimes.get(Movie.SHOW_TIMES));
 		}
 		ed.commit();
 	}
@@ -324,8 +328,8 @@ public class MovieData {
 			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
 			if (showTimes.length() > 0) {
 				Map<String, String> deets = new HashMap<String, String>();
-				deets.put(Movie.FetchTask.CINEMA_NAME, cinema.toString() + ": ");
-				deets.put(Movie.FetchTask.SHOW_TIMES, showTimes);
+				deets.put(Movie.CINEMA_NAME, cinema.toString() + ": ");
+				deets.put(Movie.SHOW_TIMES, showTimes);
 				today.add(deets);
 			}
 		}
@@ -340,8 +344,8 @@ public class MovieData {
 	public String getScreenings(Cinema cinema) {
 		List<Map<String, String>> all = this.showings.get(Day.today().name());
 		for (Map<String, String> schedule : all) {
-			if (schedule.get(Movie.FetchTask.CINEMA_NAME).equals(cinema.toString() + ": ")) {
-				return schedule.get(Movie.FetchTask.SHOW_TIMES);
+			if (schedule.get(Movie.CINEMA_NAME).equals(cinema.toString() + ": ")) {
+				return schedule.get(Movie.SHOW_TIMES);
 			}
 		}
 		Log.w("cineti", "No showings of " + this.title + " found at " + cinema.toString() + " for today.");
