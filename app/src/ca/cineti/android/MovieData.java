@@ -322,28 +322,17 @@ public class MovieData {
 		if (this.synopsis != null) {
 			ed.putString(SYNOPSIS, this.synopsis);
 		}
-		String today = Day.today().name();
-		for (Map<String, String> showTimes : this.showings.get(today)) {
-			String cinemaName = showTimes.get(Movie.CINEMA_NAME);
-			ed.putString(today + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
-						 showTimes.get(Movie.SHOW_TIMES));
-		}
+		Day today = Day.today();
+		Day someDay = today;
+		do {
+			for (Map<String, String> showTimes : this.showings.get(someDay.name())) {
+				String cinemaName = showTimes.get(Movie.CINEMA_NAME);
+				ed.putString(someDay.name() + '@' + cinemaName.substring(0, cinemaName.length() - 2), 
+							 showTimes.get(Movie.SHOW_TIMES));
+			}
+			someDay = someDay.next();
+		} while (someDay != today);
 		ed.commit();
-	}
-
-	/**
-	 * Instantiates a MovieData object for a specific movie using cached data.
-	 * @param ctx App context
-	 * @param id Movie ID number
-	 */
-	public MovieData(Context ctx, int id) {
-		this.id = id;
-		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(id), 0);
-	    // Retrieve cached data
-		this.genre = cachedData.getString(GENRE, "generic");
-		this.title = cachedData.getString(TITLE, "Untitled");
-		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
-		loadCachedShowings(cachedData);
 	}
 
 	/**
@@ -364,6 +353,21 @@ public class MovieData {
 		}
 		this.showings.put(currentDay, today);
 		return today.size() > 0;
+	}
+
+	/**
+	 * Instantiates a MovieData object for a specific movie using cached data.
+	 * @param ctx App context
+	 * @param id Movie ID number
+	 */
+	public MovieData(Context ctx, int id) {
+		this.id = id;
+		SharedPreferences cachedData = ctx.getSharedPreferences(Integer.toString(id), 0);
+	    // Retrieve cached data
+		this.genre = cachedData.getString(GENRE, "generic");
+		this.title = cachedData.getString(TITLE, "Untitled");
+		this.synopsis = cachedData.getString(SYNOPSIS, "Not much happens.");
+		loadCachedShowings(cachedData);
 	}
 
 	public List<Map<String, String>> getScreenings() {
