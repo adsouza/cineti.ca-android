@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -62,7 +63,7 @@ public class MovieData {
 		this.id = id;
 		try {
 			this.title = json.getString(TITLE);
-			this.genre = json.getString(GENRE);
+			this.genre = "";//json.getString(GENRE);
 			this.synopsis = json.getString(PLOT);
 			this.showings = new HashMap<String, List<Map<String, String>>>();
 			
@@ -102,8 +103,9 @@ public class MovieData {
 	}
 
 	/**
-	 * @param json
-	 * @return
+	 * Extracts and stores the screening info for a movie on a given day from a JSON object.
+	 * @param json A JSON object containing screening info for a movie on a given day.
+	 * @return A list of theatreName->showtimes maps for each theatre showing the movie. 
 	 * @throws JSONException
 	 */
 	private List<Map<String, String>> extractScreenings(JSONObject json)
@@ -339,24 +341,29 @@ public class MovieData {
 	}
 
 	/**
-	 * @param cachedData
+	 * Retrieve the weekly schedules for all movies at all cinemas from the cache.
+	 * @param cachedData cached data about movie showtimes.
+	 * @return Whether or not the data was available.
 	 */
 	private boolean loadCachedShowings(SharedPreferences cachedData) {
 		this.showings = new HashMap<String, List<Map<String, String>>>();
-		//TODO: load the rest of the week too.
-		List<Map<String, String>> today = new LinkedList<Map<String, String>>();
-		String currentDay = Day.today().name();
-		for (Cinema cinema : Cinema.array) {
-			String showTimes = cachedData.getString(currentDay + '@' + cinema.toString(), "");
-			if (showTimes.length() > 0) {
-				Map<String, String> deets = new HashMap<String, String>();
-				deets.put(Movie.CINEMA_NAME, cinema.toString() + ": ");
-				deets.put(Movie.SHOW_TIMES, showTimes);
-				today.add(deets);
+		Day currentDay = Day.today();
+		Day someDay = currentDay;
+		do {
+			List<Map<String, String>> today = new LinkedList<Map<String, String>>();
+			for (Cinema cinema : Cinema.array) {
+				String showTimes = cachedData.getString(someDay.name() + '@' + cinema.toString(), "");
+				if (showTimes.length() > 0) {
+					Map<String, String> deets = new HashMap<String, String>();
+					deets.put(Movie.CINEMA_NAME, cinema.toString() + ": ");
+					deets.put(Movie.SHOW_TIMES, showTimes);
+					today.add(deets);
+				}
 			}
-		}
-		this.showings.put(currentDay, today);
-		return today.size() > 0;
+			this.showings.put(someDay.name(), today);
+			someDay = someDay.next();
+		} while (someDay != currentDay);
+		return this.showings.size() > 0;
 	}
 
 	/**
@@ -374,9 +381,15 @@ public class MovieData {
 		loadCachedShowings(cachedData);
 	}
 
-	public List<Map<String, String>> getScreenings() {
-		//TODO: display the rest of the week tooo.
-		return this.showings.get(Day.today().name());
+	public List<List<Map<String, String>>> getScreenings() {
+		List<List<Map<String, String>>> schedule = new ArrayList<List<Map<String, String>>>(7);
+		Day currentDay = Day.today();
+		Day someDay = currentDay;
+		do {
+			schedule.add(this.showings.get(someDay.name()));
+			someDay = someDay.next();
+		} while (someDay != currentDay);
+		return schedule;
 	}
 	
 	public String getScreenings(Cinema cinema) {

@@ -77,10 +77,10 @@ public class Movie extends Activity {
 		@Override
 		protected void after(Context ctx, JSONObject jsonMovie) {
 			MovieData data = new MovieData(ctx, this.id, jsonMovie);
-			displayInfo(data);
 			for (Map.Entry<Day, JSONObject> futureData : this.weekRem.entrySet()) {
 				data.absorbShowtimes(futureData.getKey(), futureData.getValue());
 			}
+			displayInfo(data);
 			data.persist(ctx);
 		}
 
@@ -97,13 +97,15 @@ public class Movie extends Activity {
 			TextView synopsis =(TextView) findViewById(R.id.synopsis);
 			synopsis.setText(data.getSynopsis());
 			final List<Map<String, String>> headerData = new ArrayList<Map<String, String>>();
-			Map<String, String> day = new HashMap<String, String>();
-			//TODO: display schedules for rest of week tooo.
-			day.put(DAY, "today");
-			headerData.add(day);
-			final List<List<Map<String, String>>> contentData = new ArrayList<List<Map<String, String>>>();
-			List<Map<String, String>> cinemas = data.getScreenings();
-			contentData.add(cinemas);
+			Day currentDay = Day.today();
+			Day someDay = currentDay;
+			do {
+				Map<String, String> day = new HashMap<String, String>();
+				day.put(DAY, someDay.toString());
+				headerData.add(day);
+				someDay = someDay.next();
+			} while (someDay != currentDay);
+			final List<List<Map<String, String>>> contentData = data.getScreenings();
 			SimpleExpandableListAdapter expListAdapter = 
 				new SimpleExpandableListAdapter(Movie.this, 
 												 headerData, 
