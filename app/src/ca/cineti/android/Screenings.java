@@ -46,7 +46,8 @@ public class Screenings extends ListActivity {
 																	new HttpGet(url), 
 																	new BasicResponseHandler()));
 				JSONArray jsonScreenings = cinemaInfo.getJSONArray("movies");
-				for (int i = jsonScreenings.length() - 1; i >= 0; i--) {
+				int numMovies = jsonScreenings.length();
+				for (int i = 0; i < numMovies; i++) {
 					JSONObject screeningInfo = jsonScreenings.getJSONObject(i);
 					this.movies.add(new MovieData(this, screeningInfo, cinema));
 				}
